@@ -1,14 +1,19 @@
 #include <Arduino.h>
 #include <LiquidCrystal.h>
 
+//ADC Registers
 volatile unsigned char *my_ADMUX = (unsigned char *)0x7C;
 volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
+
+//Variables for thermister
 int Vo;
 float R1 = 10000;
-float logR2, R2, T, Tc, Tf;
+float logR2, R2, T;
 float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+//LCD Pins
+LiquidCrystal lcd(7,8,9,10,11,12);
 
 void adc_init();
 unsigned int adc_read(unsigned char);
@@ -25,20 +30,23 @@ void loop()
 {
   // get the reading from the ADC
   unsigned int adc_reading = adc_read(0);
-  // print it to the serial port
-  Serial.print("ADC Reading");
-  Serial.println(adc_reading);
   Vo = adc_reading;
   R2 = R1 * (1023.0 / (float)Vo - 1.0);
   logR2 = log(R2);
-  T = (1.0 / (c1 + c2 * logR2 + c3 * logR2 * logR2 * logR2));
-  Tc = T - 273.15;
-  Tf = (Tc * 9.0) / 5.0 + 32.0;
+  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2));
+  T = T - 273.15;
+  T = (T * 9.0)/ 5.0 + 32.0;
+  
   Serial.print("Temperature: "); 
-  Serial.print(Tf);
+  Serial.print(T);
   Serial.print(" F; ");
-  Serial.print(Tc);
-  Serial.println(" C");
+ 
+  lcd.print("Temp = ");
+  lcd.print(T);   
+  lcd.print(" F");
+  
+  delay(500);            
+  lcd.clear();
 }
 void adc_init()
 {
